@@ -1,11 +1,10 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { decodeAnswers } from '@/lib/encoding';
-import { encodeAnswers } from '@/lib/encoding';
 import { calculateResults } from '@/lib/scoring';
 import { archetypes, getCombo } from '@/data/archetypes';
 import { ArchetypeBadge } from '@/components/results/ArchetypeBadge';
@@ -18,6 +17,18 @@ import { ChipConfetti } from '@/components/ui/ChipConfetti';
 function ResultsContent() {
   const searchParams = useSearchParams();
   const encoded = searchParams.get('r');
+  const name = searchParams.get('n') || '';
+  const isOwn = searchParams.get('own') === '1';
+
+  const [shareUrl, setShareUrl] = useState('');
+
+  useEffect(() => {
+    if (encoded) {
+      const params = new URLSearchParams({ r: encoded });
+      if (name) params.set('n', name);
+      setShareUrl(`${window.location.origin}/results?${params.toString()}`);
+    }
+  }, [encoded, name]);
 
   if (!encoded) {
     return (
@@ -53,13 +64,16 @@ function ResultsContent() {
   const result = calculateResults(answers);
   const primaryArchetype = archetypes[result.primary];
   const combo = getCombo(result.primary, result.secondary);
-  const shareUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/results?r=${encodeAnswers(answers)}`
-    : '';
+
+  const headerLabel = isOwn
+    ? 'Your Poker Archetype'
+    : name
+      ? `${name}\u2019s Poker Archetype`
+      : 'Their Poker Archetype';
 
   return (
     <main className="min-h-svh px-4 py-8 max-w-lg mx-auto">
-      <ChipConfetti />
+      {isOwn && <ChipConfetti />}
 
       <motion.div
         initial={{ opacity: 0 }}
@@ -67,7 +81,7 @@ function ResultsContent() {
         transition={{ delay: 0.1 }}
         className="text-center mb-2"
       >
-        <p className="text-cream/50 text-xs uppercase tracking-widest">Your Poker Archetype</p>
+        <p className="text-cream/50 text-xs uppercase tracking-widest">{headerLabel}</p>
       </motion.div>
 
       <ArchetypeBadge
@@ -95,29 +109,63 @@ function ResultsContent() {
         <ProfileDetail title="Table Instincts" content={primaryArchetype.tableInstincts} />
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2 }}
-        className="mt-8 space-y-3"
-      >
-        <ShareButton url={shareUrl} />
+      {isOwn ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2 }}
+          className="mt-8 space-y-3"
+        >
+          <ShareButton
+            url={shareUrl}
+            archetypeName={primaryArchetype.name}
+            name={name || undefined}
+          />
 
-        <div className="flex gap-3">
-          <Link
-            href="/quiz"
-            className="flex-1 py-3 rounded-xl border border-white/10 text-cream/60 text-center text-sm font-medium hover:bg-white/5 transition-colors"
-          >
-            Retake Quiz
+          <div className="flex gap-3">
+            <Link
+              href="/quiz"
+              className="flex-1 py-3 rounded-xl border border-white/10 text-cream/60 text-center text-sm font-medium hover:bg-white/5 transition-colors"
+            >
+              Retake Quiz
+            </Link>
+            <Link
+              href="/archetypes"
+              className="flex-1 py-3 rounded-xl border border-white/10 text-cream/60 text-center text-sm font-medium hover:bg-white/5 transition-colors"
+            >
+              All Archetypes
+            </Link>
+          </div>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2 }}
+          className="mt-10 text-center space-y-4"
+        >
+          <p className="text-cream/60 font-serif text-lg">
+            {name ? `Think you can beat ${name}?` : 'Think you can do better?'}
+          </p>
+
+          <Link href="/">
+            <motion.div
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              className="inline-block w-full py-4 rounded-2xl bg-yellow-500 text-gray-900 font-bold text-base cursor-pointer hover:bg-yellow-400 transition-colors"
+            >
+              Discover YOUR Poker Personality
+            </motion.div>
           </Link>
+
           <Link
             href="/archetypes"
-            className="flex-1 py-3 rounded-xl border border-white/10 text-cream/60 text-center text-sm font-medium hover:bg-white/5 transition-colors"
+            className="inline-block text-cream/40 text-sm underline underline-offset-4 hover:text-cream/60 transition-colors"
           >
-            All Archetypes
+            View all archetypes
           </Link>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
     </main>
   );
 }

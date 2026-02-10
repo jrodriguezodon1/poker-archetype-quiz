@@ -3,15 +3,31 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
-export function ShareButton({ url }: { url: string }) {
+interface ShareButtonProps {
+  url: string;
+  archetypeName?: string;
+  name?: string;
+}
+
+export function ShareButton({ url, archetypeName, name }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
+    const shareTitle = name && archetypeName
+      ? `${name} is ${archetypeName}!`
+      : archetypeName
+        ? `I'm ${archetypeName}!`
+        : 'My Poker Personality';
+
+    const shareText = name
+      ? `${name} is ${archetypeName || 'a poker natural'}! Take the quiz to find YOUR poker personality.`
+      : `Check out my poker archetype — ${archetypeName || 'what\'s yours'}?`;
+
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'My Poker Personality',
-          text: 'Check out my poker archetype!',
+          title: shareTitle,
+          text: shareText,
           url,
         });
         return;

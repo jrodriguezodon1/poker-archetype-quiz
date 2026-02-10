@@ -35,7 +35,9 @@ export default function QuizPage() {
   const handleFinish = useCallback(() => {
     const validAnswers = answers.filter((a): a is Action => a !== null);
     const encoded = encodeAnswers(validAnswers);
-    router.push(`/results?r=${encoded}`);
+    const name = sessionStorage.getItem('poker-personality-name');
+    const nameParam = name ? `&n=${encodeURIComponent(name)}` : '';
+    router.push(`/results?r=${encoded}${nameParam}&own=1`);
   }, [answers, router]);
 
   // Keyboard navigation
